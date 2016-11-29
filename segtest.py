@@ -27,7 +27,6 @@ class Perceptron:
         times = 0
         for sent in self.train_set:
             #print(times) 
-            
             for i in range(len(sent)):
                 # argmax(y)
                 predict_y = self.argmaxy(sent, i)           
@@ -71,9 +70,11 @@ class Perceptron:
             features.append(char + '_' + label + sent[idx + 1][0])
             features.append(label + '~' + sent[idx + 1][0])
         if (idx - 1 >= 0):
-            features.append(sent[idx - 1][0] + char + '_' + label)
-            features.append(sent[idx - 1][0] + '~' + label)    
-            features.append(sent[idx - 1][1] + '~' + label)
+            features.append(sent[idx-1][0] + char + '_' + label)
+            features.append(sent[idx-1][0] + '~' + label)    
+            #features.append(sent[idx-1][1] + '~' + label)
+        if (idx - 1 >= 0 and idx + 1 < len(sent)):
+            features.append(sent[idx-1][0] + '~' + label + '~' + sent[idx+1][0])
         vec = []
         for f in features:
             if f in self.feature_set:
@@ -164,10 +165,11 @@ class Perceptron:
                 if (i - 1 >= 0):
                     feature_set.add(tagged[i-1][0] + tagged[i][0] + '_' + tagged[i][1])
                     feature_set.add(tagged[i-1][0] + '~' + tagged[i][1])
-                    feature_set.add(tagged[i-1][1] + '~' + tagged[i][1])
+                    #feature_set.add(tagged[i-1][1] + '~' + tagged[i][1])
                 #trigram
                 if (i - 1 >= 0 and i + 1 < len(tagged)):
-                    pass
+                    feature_set.add(tagged[i-1][0] + '~' + tagged[i][1] + '~' + tagged[i+1][0])
+                    
         
         feature_set = list(feature_set)
         for i in range(len(feature_set)):
