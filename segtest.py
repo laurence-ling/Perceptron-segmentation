@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import random, pickle, os
+import random, pickle, os, sys
 import numpy as np
 
 class Perceptron:
@@ -43,11 +43,9 @@ class Perceptron:
             times += 1
         # average weight
         print('times', times)
-        fd = open('saved_weight', 'wb')
-        pickle.dump(saved_weight, fd)
-        fd.close()
+        
         self.weight = saved_weight / times
-        fd = open('line_weight', 'wb')
+        fd = open(weight_filename, 'wb')
         pickle.dump(self.weight, fd)
         fd.close()
 
@@ -75,6 +73,7 @@ class Perceptron:
         if (idx - 1 >= 0):
             features.append(sent[idx - 1][0] + char + '_' + label)
             features.append(sent[idx - 1][0] + '~' + label)    
+            features.append(sent[idx - 1][1] + '~' + label)
         vec = []
         for f in features:
             if f in self.feature_set:
@@ -126,15 +125,17 @@ class Perceptron:
                             break
                     segmented.append(temp)
                     current = j
-                    
-            print(' '.join(segmented))
+            if len(sys.argv) == 2:     
+                print(' '.join(segmented), sent)
+            else:
+                print(' '.join(segmented))
 
     def preprocess(self, trainset_filename):
         fd = open(trainset_filename, 'r')
         for sent in fd.readlines():
             sent = sent.strip().split()
             if not sent:
-                print('blank line',sent, len(self.train_set))
+                #print('blank line',sent, len(self.train_set))
                 continue
             tagged = []
             for words in sent:
@@ -147,7 +148,8 @@ class Perceptron:
                 tagged.append((words[-1], 'E'))
             self.train_set.append(tagged)
         fd.close()
-        print('train set is ready', len(self.train_set))
+        if len(sys.argv) == 2:
+            print('train set is ready', len(self.train_set))
 
     def extract(self, feature_filename):
         feature_set = set()
@@ -162,6 +164,7 @@ class Perceptron:
                 if (i - 1 >= 0):
                     feature_set.add(tagged[i-1][0] + tagged[i][0] + '_' + tagged[i][1])
                     feature_set.add(tagged[i-1][0] + '~' + tagged[i][1])
+                    feature_set.add(tagged[i-1][1] + '~' + tagged[i][1])
                 #trigram
                 if (i - 1 >= 0 and i + 1 < len(tagged)):
                     pass
@@ -169,10 +172,10 @@ class Perceptron:
         feature_set = list(feature_set)
         for i in range(len(feature_set)):
             self.feature_set[feature_set[i]] = i
-        if not os.path.exists(feature_filename):
-            fw = open(feature_filename, 'wb')
-            pickle.dump(self.feature_set, fw)
-            fw.close()
+
+        fw = open(feature_filename, 'wb')
+        pickle.dump(self.feature_set, fw)
+        fw.close()
     
         print("feature extract complete", len(self.feature_set))
 
@@ -181,7 +184,7 @@ def main():
     classifier.preprocess('data/train.txt')
     #classifier.extract('feature_set')
     #classifier.train('feature_set', 'weight')
-    classifier.predict('data/test.txt', 'feature_set', 'line_weight')
+    classifier.predict('data/test.txt', 'feature_set', 'weight')
 
 if __name__ == '__main__':
     main()
