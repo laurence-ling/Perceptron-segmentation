@@ -27,7 +27,6 @@ class Perceptron:
         times = 0
         for sent in self.train_set:
             #print(times) 
-            
             for i in range(len(sent)):
                 # argmax(y)
                 predict_y = self.argmaxy(sent, i)           
@@ -39,9 +38,11 @@ class Perceptron:
                         self.weight[i] += 1
                     for j in vec2:
                         self.weight[j] -= 1
-                    saved_weight += self.weight
-                    times += 1
+                saved_weight += self.weight
+                times += 1
         # average weight
+        print('times', times)
+        
         self.weight = saved_weight / times
         fd = open(weight_filename, 'wb')
         pickle.dump(self.weight, fd)
@@ -59,7 +60,6 @@ class Perceptron:
             if value > maxval: 
                 maxval = value
                 predict_y = y
-        #print(predict_y)
         return predict_y
 
     def get_feature(self, sent, idx, label):
@@ -69,8 +69,11 @@ class Perceptron:
             features.append(char + '_' + label + sent[idx + 1][0])
             features.append(label + '~' + sent[idx + 1][0])
         if (idx - 1 >= 0):
-            features.append(sent[idx - 1][0] + char + '_' + label)
-            features.append(sent[idx - 1][0] + '~' + label)    
+            features.append(sent[idx-1][0] + char + '_' + label)
+            features.append(sent[idx-1][0] + '~' + label)    
+            #features.append(sent[idx-1][1] + '~' + label)
+        if (idx - 1 >= 0 and idx + 1 < len(sent)):
+            features.append(sent[idx-1][0] + '~' + label + '~' + sent[idx+1][0])
         vec = []
         for f in features:
             if f in self.feature_set:
@@ -96,16 +99,26 @@ class Perceptron:
             # predict label
             for i in range(len(sent)):
                 sent[i][1] = self.argmaxy(sent, i)
+            #print(sent)
             # segment words
             segmented = []
             current = 0
             while current < len(sent):
                 item = sent[current]
                 # due to the miss tag, B E E may appear
-                if item[1] == 'S' or item[1] == 'E':
+                if item[1] == 'S':
                     segmented.append(item[0])
                     current += 1
                     continue
+                elif item[1] == 'E':
+                    temp = item[0]
+                    j = current + 1
+                    if j < len(sent) and (sent[j][1] == 'E'):
+                        temp += sent[j][0]
+                        j += 1
+                    segmented.append(temp)
+                    current = j
+
                 elif item[1] == 'B' or item[1] == 'M':
                     temp = item[0]
                     j = current + 1
@@ -116,7 +129,12 @@ class Perceptron:
                         elif sent[j][1] == 'E':
                             temp += sent[j][0]
                             j += 1
-                            break #if break is least length match
+                            break
+                        elif sent[j][1] == 'B':
+                            if j + 1 < len(sent) and sent[j+1][1] == 'B':
+                                temp += sent[j][0]
+                                j += 1
+                            break
                         else:
                             break
                     segmented.append(temp)
@@ -160,17 +178,20 @@ class Perceptron:
                 if (i - 1 >= 0):
                     feature_set.add(tagged[i-1][0] + tagged[i][0] + '_' + tagged[i][1])
                     feature_set.add(tagged[i-1][0] + '~' + tagged[i][1])
+                    #feature_set.add(tagged[i-1][1] + '~' + tagged[i][1])
                 #trigram
                 if (i - 1 >= 0 and i + 1 < len(tagged)):
-                    pass
+                    feature_set.add(tagged[i-1][0] + '~' + tagged[i][1] + '~' + tagged[i+1][0])
+                    #feature_set.add(tagged[i-1][0] + tagged[i][0] + '_' + tagged[i][1] + tagged[i+1][0])
+                    
         
         feature_set = list(feature_set)
         for i in range(len(feature_set)):
             self.feature_set[feature_set[i]] = i
-        if not os.path.exists(feature_filename):
-            fw = open(feature_filename, 'wb')
-            pickle.dump(self.feature_set, fw)
-            fw.close()
+
+        fw = open(feature_filename, 'wb')
+        pickle.dump(self.feature_set, fw)
+        fw.close()
     
         print("feature extract complete", len(self.feature_set))
 
@@ -178,8 +199,8 @@ def main():
     classifier = Perceptron()
     classifier.preprocess('data/train.txt')
     #classifier.extract('feature_set')
-    #classifier.train('feature_set', 'weight')
-    classifier.predict('data/test.txt', 'feature_set', 'weight')
+    classifier.train('feature_set', 'weight')
+    #classifier.predict('data/test.txt', 'feature_set', 'weight.bi')
 
 if __name__ == '__main__':
     main()

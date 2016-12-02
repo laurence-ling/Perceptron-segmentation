@@ -107,10 +107,19 @@ class Perceptron:
             while current < len(sent):
                 item = sent[current]
                 # due to the miss tag, B E E may appear
-                if item[1] == 'S' or item[1] == 'E':
+                if item[1] == 'S':
                     segmented.append(item[0])
                     current += 1
                     continue
+                elif item[1] == 'E':
+                    temp = item[0]
+                    j = current + 1
+                    if j < len(sent) and (sent[j][1] == 'E'):
+                        temp += sent[j][0]
+                        j += 1
+                    segmented.append(temp)
+                    current = j
+
                 elif item[1] == 'B' or item[1] == 'M':
                     temp = item[0]
                     j = current + 1
@@ -121,6 +130,11 @@ class Perceptron:
                         elif sent[j][1] == 'E':
                             temp += sent[j][0]
                             j += 1
+                            break
+                        elif sent[j][1] == 'B':
+                            if j + 1 < len(sent) and sent[j+1][1] == 'B':
+                                temp += sent[j][0]
+                                j += 1
                             break
                         else:
                             break
@@ -169,6 +183,7 @@ class Perceptron:
                 #trigram
                 if (i - 1 >= 0 and i + 1 < len(tagged)):
                     feature_set.add(tagged[i-1][0] + '~' + tagged[i][1] + '~' + tagged[i+1][0])
+                    #feature_set.add(tagged[i-1][0] + tagged[i][0] + '_' + tagged[i][1] + tagged[i+1][0])
                     
         
         feature_set = list(feature_set)
@@ -186,7 +201,7 @@ def main():
     classifier.preprocess('data/train.txt')
     #classifier.extract('feature_set')
     #classifier.train('feature_set', 'weight')
-    classifier.predict('data/test.txt', 'feature_set', 'weight')
+    classifier.predict('data/test.txt', 'feature_set', 'weight.bi')
 
 if __name__ == '__main__':
     main()
