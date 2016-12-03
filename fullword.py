@@ -199,8 +199,8 @@ def main():
     classifier = Perceptron()
     classifier.preprocess('data/train.txt')
     #classifier.extract('feature_set')
-    classifier.train('feature_set', 'weight')
-    #classifier.predict('data/test.txt', 'feature_set', 'weight.bi')
+    #classifier.train('feature_set', 'weight')
+    classifier.predict('data/test.txt', 'feature_set', 'weight')
 
 if __name__ == '__main__':
     main()
